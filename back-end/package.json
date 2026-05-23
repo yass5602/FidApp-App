@@ -1,0 +1,31 @@
+{
+  "name": "fidapp-backend",
+  "version": "0.1.0",
+  "description": "API REST FidApp — Node.js + Fastify + MongoDB Atlas",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev":   "node --watch src/index.js",
+    "start": "node src/index.js",
+    "lint":  "eslint src/"
+  },
+  "dependencies": {
+    "@fastify/cors":      "^10.0.0",
+    "@fastify/helmet":    "^13.0.0",
+    "@fastify/jwt":       "^10.0.0",
+    "@fastify/multipart": "^9.0.0",
+    "bcryptjs":          "^2.4.3",
+    "dotenv":            "^16.4.5",
+    "fastify":            "^5.8.5",
+    "jsonwebtoken":      "^9.0.2",
+    "mongoose":          "^8.15.2",
+    "sharp":             "^0.34.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+

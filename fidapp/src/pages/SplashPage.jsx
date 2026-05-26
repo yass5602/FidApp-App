@@ -5,7 +5,7 @@ import { useAuth } from '../context/AppContext'
 
 const DM   = "'DM Sans', sans-serif"
 const SYNE = "'Syne', sans-serif"
-//123456789s
+
 export default function SplashPage() {
   const navigate = useNavigate()
   const { user } = useAuth()

@@ -8,6 +8,8 @@ const transactionSchema = new mongoose.Schema({
   isNewCard:   { type: Boolean, default: false },
   isComplete:  { type: Boolean, default: false },
   rewardCode:  { type: String, default: null },
+  rewardValidated:    { type: Boolean, default: false },
+  rewardValidatedAt:  { type: Date, default: null },
   scannedAt:   { type: Date, default: Date.now },
 }, { timestamps: true })
 

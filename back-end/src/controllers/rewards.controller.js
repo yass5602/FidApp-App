@@ -1,54 +1,70 @@
 // src/controllers/rewards.controller.js
-// Les récompenses "en attente" sont des cartes complétées non encore validées.
-
-import Card     from '../models/Card.js'
-import Program  from '../models/Program.js'
-import Merchant from '../models/Merchant.js'
-import User     from '../models/User.js'
+import Transaction from '../models/Transaction.js'
+import Card        from '../models/Card.js'
+import Program     from '../models/Program.js'
+import Merchant    from '../models/Merchant.js'
 
 // GET /api/rewards/pending
+// Récompenses en attente de validation pour ce commerçant
 export async function getPendingRewards(request, reply) {
   const userId = request.user.id
-  const merchant = await Merchant.findOne({ ownerId: userId })
+
+  const merchant  = await Merchant.findOne({ ownerId: userId })
   if (!merchant) return reply.send([])
 
-  const programs = await Program.find({ merchantId: merchant._id, active: true })
+  const programs  = await Program.find({ merchantId: merchant._id, active: true })
   const programIds = programs.map(p => p._id)
+  const cards     = await Card.find({ programId: { $in: programIds } })
+  const cardIds   = cards.map(c => c._id)
 
-  // Cartes avec au moins une complétion non validée
-  // (simplification : retourner toutes les cartes complétées récemment)
-  const completedCards = await Card.find({
-    programId: { $in: programIds },
-    completedCount: { $gt: 0 },
-  }).populate('userId', 'name').populate('programId', 'name reward')
+  const pending = await Transaction.find({
+    cardId:           { $in: cardIds },
+    rewardCode:       { $ne: null },
+    rewardValidated:  false,
+  })
+  .sort({ createdAt: -1 })
+  .populate({ path: 'cardId', populate: { path: 'userId', select: 'name' } })
 
-  const rewards = completedCards.map(c => ({
-    id:          c._id,
-    clientName:  c.userId.name,
-    programName: c.programId.name,
-    reward:      c.programId.reward,
-    count:       c.completedCount,
-  }))
-
-  return reply.send(rewards)
+  return reply.send(pending.map(t => ({
+    id:          t._id,
+    rewardCode:  t.rewardCode,
+    clientName:  t.cardId?.userId?.name || 'Client',
+    createdAt:   t.createdAt,
+  })))
 }
 
-// POST /api/rewards/:id/validate
-export async function validateReward(request, reply) {
-  const { id } = request.params
+// POST /api/rewards/redeem
+// Le commerçant valide le code présenté par le client
+export async function redeemReward(request, reply) {
   const userId = request.user.id
+  const { code } = request.body
 
-  const merchant = await Merchant.findOne({ ownerId: userId })
-  if (!merchant) return reply.status(403).send({ error: 'Non autorisé' })
-
-  const card = await Card.findById(id)
-  if (!card) return reply.status(404).send({ error: 'Carte introuvable' })
-
-  // Décrémenter le compteur de complétions
-  if (card.completedCount > 0) {
-    card.completedCount -= 1
-    await card.save()
+  if (!code || code.length !== 6) {
+    return reply.status(400).send({ error: 'Code invalide — 6 caractères attendus' })
   }
 
-  return reply.send({ validated: true })
+  // Vérifier que ce code appartient bien à un programme de ce commerçant
+  const merchant  = await Merchant.findOne({ ownerId: userId })
+  if (!merchant) return reply.status(403).send({ error: 'Non autorisé' })
+
+  const programs  = await Program.find({ merchantId: merchant._id })
+  const programIds = programs.map(p => p._id)
+  const cards     = await Card.find({ programId: { $in: programIds } })
+  const cardIds   = cards.map(c => c._id)
+
+  const transaction = await Transaction.findOne({
+    cardId:          { $in: cardIds },
+    rewardCode:      code.toUpperCase(),
+    rewardValidated: false,
+  })
+
+  if (!transaction) {
+    return reply.status(404).send({ error: 'Code introuvable ou déjà validé' })
+  }
+
+  transaction.rewardValidated  = true
+  transaction.rewardValidatedAt = new Date()
+  await transaction.save()
+
+  return reply.send({ success: true, message: 'Récompense validée ✅' })
 }

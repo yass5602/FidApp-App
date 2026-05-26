@@ -1366,6 +1366,30 @@ export default function ClientPage() {
       .finally(() => setLoadingCards(false))
     }, [])
 
+    // Vérifier toutes les 10s si une récompense en attente a été validée
+  React.useEffect(() => {
+    if (Object.keys(pendingRewards).length === 0) return
+    const interval = setInterval(async () => {
+      try {
+        const updated = await apiGetMyCards()
+        if (updated.length) {
+          setCards(updated)
+          // Nettoyer les pendingRewards dont la carte a été réinitialisée
+          setPendingRewards(prev => {
+            const next = { ...prev }
+            updated.forEach((card, i) => {
+              if (next[i] && card.points === 0 && !card.completedCount) {
+                delete next[i]
+              }
+            })
+            return next
+          })
+        }
+      } catch {}
+    }, 10_000)
+    return () => clearInterval(interval)
+  }, [Object.keys(pendingRewards).length])
+
   React.useEffect(() => {
     try { localStorage.setItem('fid_pending_rewards', JSON.stringify(pendingRewards)) } catch {}
     }, [pendingRewards])

@@ -311,7 +311,8 @@ export default function ProfileTab({ cards, plan: planKey, onPlanChange }) {
           {[
             { label: 'Plan actuel', value: plan.label, valueColor: plan.color },
             { label: 'Fonctionnalités', value: plan.desc, valueColor: '#8A8FA8' },
-            { label: 'Mode', value: import.meta.env.DEV ? 'Développement' : 'Production', valueColor: '#8A8FA8' },
+            //{ label: 'Mode', value: import.meta.env.DEV ? 'Développement' : 'Production', valueColor: '#8A8FA8' },
+            { label: 'Email', value: user?.email || '—', valueColor: '#8A8FA8' },
           ].map((row, i, arr) => (
           <div key={row.label} style={{ padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < arr.length - 1 ? '1px solid rgba(27,35,64,0.06)' : 'none' }}>
             <span style={{ fontFamily: DM, fontSize: 13, color: '#8A8FA8', fontWeight: 500 }}>{row.label}</span>

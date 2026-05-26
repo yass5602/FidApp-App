@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiUpdatePlan } from '../utils/api'
 import { useApp } from '../context/AppContext'
-//123456789
+
 const SYS  = "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif"
 const SYNE = "'Syne', sans-serif"
 const DM   = "'DM Sans', sans-serif"
@@ -51,10 +51,8 @@ function getPlans(currentPlan) {
 
 export default function PricingPage() {
   const navigate = useNavigate()
-  const { showToast } = useApp()
-  const [currentPlan] = useState(() => {
-    try { return localStorage.getItem('fid_plan') || 'freemium' } catch { return 'freemium' }
-  })
+  const { user, login, showToast } = useApp()
+  const currentPlan = user?.plan || 'freemium'
 
   const plans = getPlans(currentPlan)
   
@@ -123,6 +121,8 @@ export default function PricingPage() {
               if (plan.ctaDisabled) return
               try {
                 await apiUpdatePlan(plan.id)
+                login(user.name, user.role, { ...user, plan: plan.id })
+                showToast(`Plan ${plan.label} activé !`, '✅')
                 navigate(-1)
               } catch (e) {
                 showToast(e.message || 'Erreur lors du changement de plan', '❌')

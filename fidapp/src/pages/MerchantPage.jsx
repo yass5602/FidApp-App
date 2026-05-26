@@ -9,6 +9,7 @@ import MyCardsTab from "../components/merchant/MyCardsTab";
 import CardCreatorTab from "../components/merchant/CardCreatorTab";
 import NotifsTab from "../components/merchant/NotifsTab";
 import ProfileTab from "../components/merchant/ProfileTab";
+import ValidateTab from '../components/merchant/ValidateTab'
 import { DEMO_MERCHANTS } from "../constants/merchants";
 
 const DM = "'DM Sans', sans-serif";
@@ -141,6 +142,16 @@ function TabBarMerchant({ active, onChange }) {
       ),
     },
     {
+      id: 'validate',
+      label: 'Valider',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4.5 4.5L16 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.8"/>
+        </svg>
+      ),
+    },
+    {
       id: "profile",
       label: "Profil",
       icon: (
@@ -207,11 +218,16 @@ function TabBarMerchant({ active, onChange }) {
 
 // ── MerchantPage ──────────────────────────────────────────────────────────────
 export default function MerchantPage() {
-  const { user, showToast, fireConfetti } = useApp();
+  const { user, logout, showToast, fireConfetti, login } = useApp()
   const navigate = useNavigate(); // ← ajouté (utilisé par ProfileTab pour navigate('/'))
   const [tab, setTab] = useState("dashboard");
   // APRÈS — plan vient du user connecté (AppContext)
   const [plan, setPlan] = useState(user?.plan || 'freemium')
+
+  React.useEffect(() => {
+    if (user?.plan) setPlan(user.plan)
+  }, [user?.plan])
+
   const [cards,   setCards]   = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -257,6 +273,7 @@ export default function MerchantPage() {
       await apiUpdatePlan(newPlan)
       setPlan(newPlan)
       login(user.name, user.role, { ...user, plan: newPlan })
+      showToast(`Plan mis à jour : ${newPlan}`, '✅')
     } catch (e) {
       showToast(e.message || 'Erreur lors du changement de plan', '❌')
     }
@@ -294,6 +311,7 @@ export default function MerchantPage() {
         )}
         {tab === 'create'    && <CardCreatorTab onCreated={handleCardCreated} limitReached={limitReached} plan={plan} cardLimit={cardLimit} />}
         {tab === 'notifs' && <NotifsTab plan={plan} />}
+        {tab === 'validate' && <ValidateTab />}
         {tab === 'profile'   && <ProfileTab     cards={cards} plan={plan} onPlanChange={handlePlanChange} />}
       </div>
       <TabBarMerchant active={tab} onChange={setTab} />

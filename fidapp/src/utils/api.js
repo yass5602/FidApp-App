@@ -184,18 +184,13 @@ export async function apiGetNotificationTargets() {
  * Récompenses en attente de validation
  * GET /api/rewards/pending
  */
+// APRÈS
 export async function apiGetPendingRewards() {
-  if (DEMO) return [];
-  return get("/rewards/pending");
+  return get('/rewards/pending')
 }
 
-/**
- * Valider une récompense
- * POST /api/rewards/:id/validate
- */
-export async function apiValidateReward(id) {
-  if (DEMO) return { validated: true };
-  return post(`/rewards/${id}/validate`);
+export async function apiRedeemReward(code) {
+  return post('/rewards/redeem', { code: code.toUpperCase() })
 }
 
 // ── Stats dashboard ────────────────────────────────────────────────────────────

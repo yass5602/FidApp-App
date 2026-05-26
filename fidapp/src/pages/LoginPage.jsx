@@ -164,7 +164,7 @@ export default function LoginPage() {
         } else {
           data = await apiLogin({ email, password: pwd })
         }
-        login(data.user.name, data.user.role, { id: data.user.id, email })
+        login(data.user.name, data.user.role, { id: data.user.id, email, plan: data.user.plan })
         showToast(`Bienvenue${mode === 'register' ? ' !' : ' de retour !'}`, '👋')
         navigate(data.user.role === 'merchant' ? '/merchant' : '/client', { replace: true })
       } catch (e) {

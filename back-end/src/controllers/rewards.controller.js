@@ -68,3 +68,17 @@ export async function redeemReward(request, reply) {
 
   return reply.send({ success: true, message: 'Récompense validée ✅' })
 }
+
+// GET /api/rewards/check?code=A3F9K2
+export async function checkRewardValidated(request, reply) {
+  const { code } = request.query
+  if (!code) return reply.status(400).send({ error: 'Code manquant' })
+
+  const transaction = await Transaction.findOne({
+    rewardCode: code.toUpperCase()
+  })
+
+  if (!transaction) return reply.status(404).send({ error: 'Code introuvable' })
+
+  return reply.send({ validated: transaction.rewardValidated })
+}

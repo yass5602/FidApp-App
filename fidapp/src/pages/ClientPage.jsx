@@ -1,5 +1,5 @@
 // pages/ClientPage.jsx — adapté depuis fidelia-client.jsx + FidApp.html
-import { apiGetMyCards, apiScan, apiGetMerchantByQRToken } from '../utils/api'
+import { apiGetMyCards, apiScan, apiGetMerchantByQRToken, apiCheckRewardValidated } from '../utils/api'
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
@@ -1366,27 +1366,33 @@ export default function ClientPage() {
       .finally(() => setLoadingCards(false))
     }, [])
 
-    // Vérifier toutes les 10s si une récompense en attente a été validée
+  // APRÈS — vérifie si le commerçant a validé chaque récompense en attente
   React.useEffect(() => {
     if (Object.keys(pendingRewards).length === 0) return
+
     const interval = setInterval(async () => {
       try {
-        const updated = await apiGetMyCards()
-        if (updated.length) {
-          setCards(updated)
-          // Nettoyer les pendingRewards dont la carte a été réinitialisée
-          setPendingRewards(prev => {
-            const next = { ...prev }
-            updated.forEach((card, i) => {
-              if (next[i] && card.points === 0 && !card.completedCount) {
-                delete next[i]
-              }
+        const entries = Object.entries(pendingRewards)
+        for (const [idx, reward] of entries) {
+          if (!reward?.code) continue
+          const result = await apiCheckRewardValidated(reward.code)
+          if (result.validated) {
+            // Commerçant a validé → supprimer la récompense en attente
+            setPendingRewards(prev => {
+              const next = { ...prev }
+              delete next[idx]
+              return next
             })
-            return next
-          })
+            // Fermer la modal si elle affiche cette récompense
+            setRewardModal(prev => prev === Number(idx) ? null : prev)
+            showToast('Récompense validée par le commerçant ! 🎉', '✅')
+            // Recharger les cartes
+            apiGetMyCards().then(data => { if (data.length) setCards(data) }).catch(() => {})
+          }
         }
       } catch {}
-    }, 10_000)
+    }, 8_000)
+
     return () => clearInterval(interval)
   }, [Object.keys(pendingRewards).length])
 

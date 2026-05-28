@@ -193,6 +193,10 @@ export async function apiRedeemReward(code) {
   return post('/rewards/redeem', { code: code.toUpperCase() })
 }
 
+export async function apiCheckRewardValidated(code) {
+  return get(`/rewards/check?code=${encodeURIComponent(code)}`)
+}
+
 // ── Stats dashboard ────────────────────────────────────────────────────────────
 
 /**

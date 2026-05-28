@@ -9,21 +9,11 @@ import MyCardsTab from "../components/merchant/MyCardsTab";
 import CardCreatorTab from "../components/merchant/CardCreatorTab";
 import NotifsTab from "../components/merchant/NotifsTab";
 import ProfileTab from "../components/merchant/ProfileTab";
-import ValidateTab from '../components/merchant/ValidateTab'
-import { DEMO_MERCHANTS } from "../constants/merchants";
+import ValidateTab from '../components/merchant/ValidateTab';
 
 const DM = "'DM Sans', sans-serif";
 const SYNE = "'Syne', sans-serif";
 
-// Carte démo pré-peuplée pour le commerçant connecté
-const INITIAL_MERCHANT_CARDS = [
-  {
-    ...DEMO_MERCHANTS[1],
-    maxPoints: 5,
-    reward: "Un café offert",
-    stats: { clients: 94, scans: 521, rewards: 63 },
-  },
-];
 
 // ── TabBar Merchant ───────────────────────────────────────────────────────────
 function TabBarMerchant({ active, onChange }) {

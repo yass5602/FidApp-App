@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import jsQR from 'jsqr'
 import LoyaltyCard from "../components/LoyaltyCard";
-import { DEMO_MERCHANTS, DEMO_CLIENT_CARDS } from "../constants/merchants";
 
 const SYS = "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif";
 const SYNE = "'Syne', sans-serif";
@@ -53,10 +52,8 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 function AddCardScreen({ existingCards, onAdd, onBack }) {
   const { showToast } = useApp()
-  const ownedIds   = existingCards.map(c => c.merchant.id)
-  const baseList   = DEMO_MERCHANTS.filter(m => !ownedIds.includes(m.id))
-  const [scanning, setScanning] = useState(null)
-  const [done,     setDone]     = useState(null)
+  const ownedIds = existingCards.map(c => c.merchant?.id?.toString())
+  
 
   // Géolocalisation
   const [geoStatus,  setGeoStatus]  = useState('idle')   // 'idle' | 'requesting' | 'granted' | 'denied'
@@ -173,13 +170,6 @@ React.useEffect(() => { return () => stopAddCamera() }, [])
     )
   }
 
-  const simulateScan = (merchant) => {
-    setScanning(merchant.id);
-    setTimeout(() => {
-      setDone(merchant.id);
-      setTimeout(() => onAdd({ merchant, points: 0 }), 1200);
-    }, 1400);
-  };
 
   return (
     <div style={{ background: "#FFF8F0", minHeight: "100%" }}>

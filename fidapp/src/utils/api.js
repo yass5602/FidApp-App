@@ -7,7 +7,6 @@
 //   VITE_API_URL=https://api.fidapp.fr
 
 const BASE = import.meta.env.VITE_API_URL || "";
-const DEMO = !BASE; // true si pas de VITE_API_URL → mode démo
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,22 +58,11 @@ function setToken(token) {
  * Body: { email, password, name, role, inviteCode? }
  * Returns: { token, user: { id, name, role } }
  */
+// APRÈS
 export async function apiRegister({ email, password, name, role, inviteCode }) {
-  if (DEMO) {
-    // MOCK — retirer en prod
-    const token = `demo_${Date.now()}`;
-    setToken(token);
-    return { token, user: { id: `user_${Date.now()}`, name, role, email } };
-  }
-  const data = await post("/register", {
-    email,
-    password,
-    name,
-    role,
-    inviteCode,
-  });
-  setToken(data.token);
-  return data;
+  const data = await post('/register', { email, password, name, role, inviteCode })
+  setToken(data.token)
+  return data
 }
 
 /**
@@ -83,16 +71,8 @@ export async function apiRegister({ email, password, name, role, inviteCode }) {
  * Body: { email, password }
  * Returns: { token, user: { id, name, role } }
  */
+// APRÈS
 export async function apiLogin({ email, password }) {
-  if (DEMO) {
-    const stored = JSON.parse(localStorage.getItem('fid_user') || 'null')
-    const token  = `demo_${Date.now()}`
-    setToken(token)
-    return {
-      token,
-      user: stored || { id: `user_${Date.now()}`, name: email.split('@')[0], role: 'client' },
-    }
-  }
   const data = await post('/login', { email, password })
   setToken(data.token)
   return data
@@ -215,11 +195,9 @@ export async function apiGetMerchantStats(period = "week") {
  * POST /api/qr/generate
  * Returns: { token, expiresAt }
  */
+// APRÈS
 export async function apiGenerateQRToken() {
-  if (DEMO) {
-    return { token: `qr_demo_${Date.now()}`, expiresAt: Date.now() + 60_000 };
-  }
-  return post("/qr/generate");
+  return post('/qr/generate')
 }
 
 // PATCH /api/merchant/plan

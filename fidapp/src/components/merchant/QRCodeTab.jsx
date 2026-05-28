@@ -25,11 +25,9 @@ export default function QRCodeTab({ user, plan }) {
       setQrToken(data.token)
       setSeconds(60)
       // Partage le token pour la simulation de scan (dev uniquement)
-      try { localStorage.setItem('fid_active_qr_token', data.token) } catch {}
-    } catch {
-      setQrToken('demo_token_' + Date.now())
-      setSeconds(60)
-    } finally {
+      } catch {
+        showToast('Erreur de génération du QR', '❌')
+      } finally {
       setLoading(false)
     }
   }, [])

@@ -41,14 +41,15 @@ await app.register(fastifyCors, {
   credentials: true,
 })*/
 
+// APRÈS
 await app.register(fastifyCors, {
   origin: (origin, cb) => {
-    // En développement : accepter toutes les origines
-    // En production : restreindre à config.allowedOrigins
-    if (config.isDev) {
+    // Autoriser les requêtes sans origine (mobile, Postman)
+    if (!origin) return cb(null, true)
+    if (config.isDev || config.allowedOrigins.includes(origin)) {
       cb(null, true)
     } else {
-      cb(null, config.allowedOrigins.includes(origin))
+      cb(new Error('Non autorisé par CORS'), false)
     }
   },
   credentials: true,

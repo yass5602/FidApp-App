@@ -2,7 +2,13 @@
 // Point d'entrée unique pour toutes les variables d'environnement.
 // Importer depuis ici plutôt que process.env directement.
 
-import 'dotenv/config'
+// src/config.js
+import * as dotenv from 'dotenv'
+
+// Charger .env uniquement en développement — en prod Railway injecte les variables directement
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config()
+}
 
 function require(key) {
   const val = process.env[key]

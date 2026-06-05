@@ -204,3 +204,14 @@ export async function apiGenerateQRToken() {
 export async function apiUpdatePlan(plan) {
   return request('PATCH', '/merchant/plan', { plan })
 }
+
+// Localisation -----------
+// GET /api/merchants/nearby
+export async function apiGetNearbyMerchants({ lat, lng, radius = 10 }) {
+  return get(`/merchants/nearby?lat=${lat}&lng=${lng}&radius=${radius}`)
+}
+
+// PATCH /api/merchant/location
+export async function apiUpdateLocation(address) {
+  return request('PATCH', '/merchant/location', { address })
+}

@@ -1,6 +1,9 @@
 // src/routes/merchant.routes.js
-import { updatePlan } from '../controllers/merchant.controller.js'
+import { updatePlan, updateLocation, getNearbyMerchants } from '../controllers/merchant.controller.js'
 
 export default async function merchantRoutes(app) {
-  app.patch('/merchant/plan', { preHandler: [app.authenticate] }, updatePlan)
+  const auth = { preHandler: [app.authenticate] }
+  app.patch('/merchant/plan',       auth, updatePlan)
+  app.patch('/merchant/location',   auth, updateLocation)
+  app.get('/merchants/nearby',      getNearbyMerchants)  // publique — pas besoin d'être connecté
 }

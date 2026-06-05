@@ -30,10 +30,26 @@ export async function createProgram(request, reply) {
     } catch {}
   }
 
-  const program = await Program.create({ ...rest, logoBase64, bgImage, merchantId: merchant._id })
-  return reply.status(201).send(program)
+const program = await Program.create({ ...rest, logoBase64, bgImage, merchantId: merchant._id })
+
+// Géocoder l'adresse et mettre à jour le Merchant
+if (rest.address) {
+  try {
+    const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(rest.address)}&format=json&limit=1`
+    const res  = await fetch(url, { headers: { 'User-Agent': 'FidApp/1.0', 'Accept-Language': 'fr' } })
+    const data = await res.json()
+    if (data[0]) {
+      await Merchant.findByIdAndUpdate(merchant._id, {
+        address: rest.address,
+        lat:     parseFloat(data[0].lat),
+        lng:     parseFloat(data[0].lon),
+      })
+    }
+  } catch {}
 }
 
+return reply.status(201).send(program)
+}
 // GET /api/programs
 export async function getMyPrograms(request, reply) {
   const userId = request.user.id

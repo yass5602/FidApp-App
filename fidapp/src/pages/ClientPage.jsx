@@ -1,5 +1,5 @@
 // pages/ClientPage.jsx — adapté depuis fidelia-client.jsx + FidApp.html
-import { apiGetMyCards, apiScan, apiGetMerchantByQRToken, apiCheckRewardValidated } from '../utils/api'
+import { apiGetMyCards, apiScan, apiGetMerchantByQRToken, apiCheckRewardValidated, apiGetNearbyMerchants } from '../utils/api'
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
@@ -56,10 +56,29 @@ function AddCardScreen({ existingCards, onAdd, onBack }) {
   
 
   // Géolocalisation
-  const [geoStatus,  setGeoStatus]  = useState('idle')   // 'idle' | 'requesting' | 'granted' | 'denied'
-  const [userPos,    setUserPos]    = useState(null)      // { lat, lng }
-  const [distances,  setDistances]  = useState({})        // { merchantId: km }
-  const [available,  setAvailable]  = useState(baseList)
+const [available,     setAvailable]     = useState([])
+const [geoStatus,     setGeoStatus]     = useState('idle')
+const [loadingNearby, setLoadingNearby] = useState(false)
+
+const requestLocation = () => {
+  setGeoStatus('requesting')
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude: lat, longitude: lng } = pos.coords
+      setGeoStatus('granted')
+      setLoadingNearby(true)
+      try {
+        const merchants = await apiGetNearbyMerchants({ lat, lng, radius: 20 })
+        setAvailable(merchants.filter(m => !ownedIds.includes(m.id?.toString())))
+      } catch {
+        showToast('Erreur lors de la recherche', '❌')
+      } finally {
+        setLoadingNearby(false)
+      }
+    },
+    () => setGeoStatus('denied')
+  )
+}
 
   const addVideoRef  = React.useRef(null)
 const addCanvasRef = React.useRef(null)
@@ -127,48 +146,6 @@ React.useEffect(() => {
 // Nettoyage
 React.useEffect(() => { return () => stopAddCamera() }, [])
 
-
-  // Geocode une adresse texte → { lat, lng } via Nominatim
-  const geocodeAddress = async (address) => {
-    if (!address) return null
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'fr', 'User-Agent': 'FidApp/1.0' } })
-      const data = await res.json()
-      if (data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
-    } catch {}
-    return null
-  }
-
-  const requestLocation = () => {
-    setGeoStatus('requesting')
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const userLat = pos.coords.latitude
-        const userLng = pos.coords.longitude
-        setUserPos({ lat: userLat, lng: userLng })
-        setGeoStatus('granted')
-
-        // Geocoder les adresses des commerçants disponibles
-        const dist = {}
-        await Promise.all(baseList.map(async (m) => {
-          if (m.address) {
-            const coords = await geocodeAddress(m.address)
-            if (coords) dist[m.id] = haversine(userLat, userLng, coords.lat, coords.lng)
-          }
-        }))
-        setDistances(dist)
-
-        // Trier par distance (commerçants sans adresse géocodée à la fin)
-        setAvailable([...baseList].sort((a, b) => {
-          const da = dist[a.id] ?? Infinity
-          const db = dist[b.id] ?? Infinity
-          return da - db
-        }))
-      },
-      () => setGeoStatus('denied')
-    )
-  }
 
 
   return (
@@ -333,165 +310,80 @@ React.useEffect(() => { return () => stopAddCamera() }, [])
             </div>
           </div>
 
-        {/* Commerçants disponibles */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ 
-            fontFamily: SYS, 
-            fontWeight: 700, 
-            fontSize: 16, 
-            color: '#1B2340' 
-            }}
-          > 
-            Commerçants proches
-          </div>
-          {geoStatus === 'idle' && (
-          <button onClick={requestLocation} style={{ background: 'rgba(255,92,58,0.10)', border: 'none', borderRadius: 10, padding: '6px 12px', cursor: 'pointer', fontFamily: DM, fontSize: 12, fontWeight: 700, color: '#FF5C3A', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2" stroke="currentColor" strokeWidth="1.4"/><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" strokeWidth="1.4"/><path d="M6.5 1v1M6.5 11v1M1 6.5h1M11 6.5h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            Me localiser
-          </button>
-          )}
-          {geoStatus === 'requesting' && <span style={{ fontFamily: DM, fontSize: 12, color: '#8A8FA8' }}>Localisation…</span>}
-          {geoStatus === 'granted'    && <span style={{ fontFamily: DM, fontSize: 12, color: '#2ECC9A', fontWeight: 600 }}>✓ Triés par distance</span>}
-          {geoStatus === 'denied'     && <span style={{ fontFamily: DM, fontSize: 12, color: '#FF4466' }}>Accès refusé</span>}
-        </div>
-        {available.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "32px 20px" }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🎉</div>
-            <div
-              style={{
-                fontFamily: DM,
-                fontWeight: 700,
-                fontSize: 16,
-                color: "#1B2340",
-              }}
-            >
-              Vous avez toutes les cartes !
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {available.map((merchant) => {
-              const isScanning =
-                scanning === merchant.id && done !== merchant.id;
-              const isDone = done === merchant.id;
-              return (
-                <div
-                  key={merchant.id}
-                  style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    overflow: "hidden",
-                    border: "1px solid rgba(27,35,64,0.08)",
-                    boxShadow: "0 2px 12px rgba(27,35,64,0.08)",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "14px 16px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 14,
-                        background: `linear-gradient(135deg, ${merchant.color1}, ${merchant.color2})`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: SYNE,
-                          fontWeight: 800,
-                          fontSize: 20,
-                          color: "#fff",
-                        }}
-                      >
-                        {merchant.logo}
-                      </span>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          fontFamily: DM,
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: "#1B2340",
-                        }}
-                      >
-                        {merchant.name}
-                      </div>
-                      <div style={{ 
-                        fontFamily: DM, 
-                        fontSize: 12, 
-                        color: '#8A8FA8', 
-                        marginTop: 2 
-                        }}
-                      >
-                        {merchant.category} · {merchant.maxPoints} tampons → {merchant.reward}
-                        {distances[merchant.id] != null && (
-                        <span style={{ 
-                          marginLeft: 6, 
-                          color: '#FF5C3A', 
-                          fontWeight: 600 
-                          }}
-                        >
-                          · {distances[merchant.id] < 1
-                          ? `${Math.round(distances[merchant.id] * 1000)}m`
-                          : `${distances[merchant.id].toFixed(1)}km`}
-                        </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() =>
-                        !isScanning && !isDone && simulateScan(merchant)
-                      }
-                      style={{
-                        flexShrink: 0,
-                        padding: "8px 16px",
-                        borderRadius: 10,
-                        border: "none",
-                        cursor: isDone ? "default" : "pointer",
-                        fontFamily: DM,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        background: isDone
-                          ? "rgba(46,204,154,0.12)"
-                          : "rgba(255,92,58,0.10)",
-                        color: isDone ? "#2ECC9A" : "#FF5C3A",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      {isDone ? "✓ Ajouté" : isScanning ? "…" : "Scanner"}
-                    </button>
-                  </div>
-                  {isScanning && (
-                    <div
-                      style={{ height: 3, background: "rgba(27,35,64,0.08)" }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: "100%",
-                          background: "#FF5C3A",
-                          borderRadius: 99,
-                          animation: "scanProgress 1.4s linear forwards",
-                        }}
-                      />
-                    </div>
-                  )}
+{/* Commerçants à proximité */}
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+  <div style={{ fontFamily: SYS, fontWeight: 700, fontSize: 16, color: '#1B2340' }}>
+    Commerçants proches
+  </div>
+  {geoStatus === 'idle' && (
+    <button onClick={requestLocation} style={{ background: 'rgba(255,92,58,0.10)', border: 'none', borderRadius: 10, padding: '6px 12px', cursor: 'pointer', fontFamily: DM, fontSize: 12, fontWeight: 700, color: '#FF5C3A', display: 'flex', alignItems: 'center', gap: 5 }}>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2" stroke="currentColor" strokeWidth="1.4"/><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" strokeWidth="1.4"/><path d="M6.5 1v1M6.5 11v1M1 6.5h1M11 6.5h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+      Me localiser
+    </button>
+  )}
+  {geoStatus === 'requesting' && <span style={{ fontFamily: DM, fontSize: 12, color: '#8A8FA8' }}>Localisation…</span>}
+  {geoStatus === 'granted'    && <span style={{ fontFamily: DM, fontSize: 12, color: '#2ECC9A', fontWeight: 600 }}>✓ Triés par distance</span>}
+  {geoStatus === 'denied'     && <span style={{ fontFamily: DM, fontSize: 12, color: '#FF4466' }}>Accès refusé</span>}
+</div>
+
+{geoStatus === 'idle' && (
+  <div style={{ background: '#fff', borderRadius: 16, padding: '24px 20px', textAlign: 'center', border: '1px solid rgba(27,35,64,0.08)' }}>
+    <div style={{ fontSize: 32, marginBottom: 8 }}>📍</div>
+    <div style={{ fontFamily: DM, fontWeight: 700, fontSize: 14, color: '#1B2340', marginBottom: 6 }}>
+      Trouvez les commerçants près de vous
+    </div>
+    <div style={{ fontFamily: DM, fontSize: 13, color: '#8A8FA8', lineHeight: 1.5 }}>
+      Activez votre localisation pour voir les commerces FidApp à proximité.
+    </div>
+  </div>
+)}
+
+{loadingNearby && (
+  <div style={{ textAlign: 'center', padding: '24px', fontFamily: DM, fontSize: 13, color: '#8A8FA8' }}>
+    Recherche des commerçants…
+  </div>
+)}
+
+{geoStatus === 'granted' && !loadingNearby && available.length === 0 && (
+  <div style={{ background: '#fff', borderRadius: 16, padding: '24px 20px', textAlign: 'center', border: '1px solid rgba(27,35,64,0.08)' }}>
+    <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+    <div style={{ fontFamily: DM, fontWeight: 700, fontSize: 14, color: '#1B2340', marginBottom: 6 }}>
+      Aucun commerçant trouvé
+    </div>
+    <div style={{ fontFamily: DM, fontSize: 13, color: '#8A8FA8' }}>
+      Aucun commerce FidApp dans un rayon de 20km.
+    </div>
+  </div>
+)}
+
+      {available.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {available.map((merchant) => (
+            <div key={merchant.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(27,35,64,0.08)', boxShadow: '0 2px 12px rgba(27,35,64,0.08)' }}>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg, ${merchant.color1 || '#FF5C3A'}, ${merchant.color2 || '#FFB347'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontFamily: SYNE, fontWeight: 800, fontSize: 20, color: '#fff' }}>
+                    {merchant.logo}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: DM, fontWeight: 700, fontSize: 15, color: '#1B2340' }}>
+                    {merchant.name}
+                  </div>
+                  <div style={{ fontFamily: DM, fontSize: 12, color: '#8A8FA8', marginTop: 2 }}>
+                    {merchant.category} · {merchant.maxPoints} tampons → {merchant.reward}
+                  </div>
+                  <div style={{ fontFamily: DM, fontSize: 12, color: '#FF5C3A', fontWeight: 600, marginTop: 2 }}>
+                    📍 {merchant.distance < 1
+                      ? `${Math.round(merchant.distance * 1000)}m`
+                      : `${merchant.distance.toFixed(1)}km`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       </div>
       <style>{`@keyframes scanProgress { from { width:0 } to { width:100% } }`}</style>
     </div>

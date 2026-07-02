@@ -7,6 +7,7 @@ import LoginPage    from './pages/LoginPage'
 import ClientPage   from './pages/ClientPage'
 import MerchantPage from './pages/MerchantPage'
 import PricingPage  from './pages/PricingPage'
+import ValidateTab from './components/merchant/ValidateTab'
 import Toast        from './components/UI/Toast'
 import Confetti     from './components/UI/Confetti'
 
@@ -83,6 +84,13 @@ function AppInner() {
         <Route path="/merchant" element={
           <ProtectedRoute requiredRole="merchant">
             <MerchantPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/validate" element={
+          <ProtectedRoute requiredRole="merchant">
+            <div style={{ height: '100dvh', background: '#FFF8F0' }}>
+              <ValidateTab />
+            </div>
           </ProtectedRoute>
         } />
         <Route path="/pricing" element={

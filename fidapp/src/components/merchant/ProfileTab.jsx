@@ -322,10 +322,20 @@ export default function ProfileTab({ cards, plan: planKey, onPlanChange }) {
         </div>
 
        
-
-        {/* Sélecteur de plan — démo uniquement */}
+{/* Bouton valider récompense */}
+<button
+  onClick={() => navigate('/validate')}
+  style={{ width: '100%', background: '#2ECC9A', color: '#fff', border: 'none', borderRadius: 14, padding: '13px 24px', fontFamily: DM, fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(46,204,154,0.3)' }}
+>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.8"/>
+  </svg>
+  Valider une récompense
+</button>
+{/* Sélecteur de plan — démo uniquement */}
 {/* Sélecteur de plan — visible uniquement en développement */}
-{import.meta.env.DEV && (
+{/*{import.meta.env.DEV && (
   <div style={{ background: '#fff', borderRadius: 16, padding: '16px', border: '1px solid rgba(27,35,64,0.08)', boxShadow: '0 2px 12px rgba(27,35,64,0.08)' }}>
     <div style={{ fontFamily: DM, fontSize: 12, fontWeight: 600, color: '#8A8FA8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
       Simuler un plan (démo)
@@ -356,7 +366,7 @@ export default function ProfileTab({ cards, plan: planKey, onPlanChange }) {
       En production, le plan sera défini par le backend après paiement.
     </div>
   </div>
-)}
+)}*/}
 
         {/* Bouton changer abonnement */}
         <button

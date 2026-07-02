@@ -132,16 +132,6 @@ function TabBarMerchant({ active, onChange }) {
       ),
     },
     {
-      id: 'validate',
-      label: 'Valider',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M4 10l4.5 4.5L16 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.8"/>
-        </svg>
-      ),
-    },
-    {
       id: "profile",
       label: "Profil",
       icon: (
@@ -301,7 +291,6 @@ export default function MerchantPage() {
         )}
         {tab === 'create'    && <CardCreatorTab onCreated={handleCardCreated} limitReached={limitReached} plan={plan} cardLimit={cardLimit} />}
         {tab === 'notifs' && <NotifsTab plan={plan} />}
-        {tab === 'validate' && <ValidateTab />}
         {tab === 'profile'   && <ProfileTab     cards={cards} plan={plan} onPlanChange={handlePlanChange} />}
       </div>
       <TabBarMerchant active={tab} onChange={setTab} />

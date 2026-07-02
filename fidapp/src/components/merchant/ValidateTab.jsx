@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { apiGetPendingRewards, apiRedeemReward } from '../../utils/api'
+import { useNavigate } from 'react-router-dom'
 
 const SYS = "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif"
 const DM  = "'DM Sans', sans-serif"
 
 export default function ValidateTab() {
   const { showToast } = useApp()
+  const navigate = useNavigate()
   const [code,     setCode]     = useState('')
   const [loading,  setLoading]  = useState(false)
   const [pending,  setPending]  = useState([])
@@ -39,13 +41,23 @@ export default function ValidateTab() {
 
   return (
     <div style={{ background: '#FFF8F0', minHeight: '100%' }}>
-      {/* Header */}
-      <div style={{ paddingTop: 16, paddingBottom: 12, paddingLeft: 22, paddingRight: 22, background: '#fff', borderBottom: '1px solid rgba(27,35,64,0.08)' }}>
+    {/* Header */}
+    <div style={{ paddingTop: 16, paddingBottom: 12, paddingLeft: 22, paddingRight: 22, background: '#fff', borderBottom: '1px solid rgba(27,35,64,0.08)', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button
+        onClick={() => navigate(-1)}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px 6px 0', color: '#FF5C3A', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M12 5L7 10l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      <div>
         <div style={{ fontFamily: SYS, fontWeight: 700, fontSize: 20, color: '#1B2340' }}>Valider une récompense</div>
         <div style={{ fontFamily: DM, fontSize: 13, color: '#8A8FA8', marginTop: 3 }}>
           Saisissez le code présenté par votre client
         </div>
       </div>
+    </div>
 
       <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
 

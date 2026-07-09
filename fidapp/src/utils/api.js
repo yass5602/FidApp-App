@@ -215,3 +215,8 @@ export async function apiGetNearbyMerchants({ lat, lng, radius = 10 }) {
 export async function apiUpdateLocation(address) {
   return request('PATCH', '/merchant/location', { address })
 }
+
+// PATCH /api/user/fcm-token
+export async function apiUpdateFcmToken(fcmToken) {
+  return request('PATCH', '/user/fcm-token', { fcmToken })
+}

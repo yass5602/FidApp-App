@@ -2,6 +2,8 @@
 // ⚠️ Casse exacte : AppContext.jsx — dossier context/ (minuscule)
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { apiLogout } from '../utils/api'
+import { requestFCMToken } from '../firebase'
+import { apiUpdateFcmToken } from '../utils/api'
 
 const AppCtx = createContext(null)
 
@@ -14,10 +16,16 @@ export function AppProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('fid_user')) } catch { return null }
   })
 
-  const login = useCallback((name, role, extra = {}) => {
+  const login = useCallback(async (name, role, extra = {}) => {
     const u = { name, role, ...extra }
     setUser(u)
     localStorage.setItem('fid_user', JSON.stringify(u))
+
+    // Demander permission notifications + envoyer token FCM au backend
+    try {
+      const fcmToken = await requestFCMToken()
+      if (fcmToken) await apiUpdateFcmToken(fcmToken)
+    } catch {}
   }, [])
 
   const logout = useCallback(() => {

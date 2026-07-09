@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import jsQR from 'jsqr'
 import LoyaltyCard from "../components/LoyaltyCard";
+import { onForegroundMessage } from '../firebase'
 
 const SYS = "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif";
 const SYNE = "'Syne', sans-serif";
@@ -1281,6 +1282,16 @@ export default function ClientPage() {
   React.useEffect(() => {
     try { localStorage.setItem('fid_pending_rewards', JSON.stringify(pendingRewards)) } catch {}
     }, [pendingRewards])
+
+    //FCM Notification Use effect
+    // Écouter les notifications quand l'app est ouverte
+  React.useEffect(() => {
+    const unsubscribe = onForegroundMessage(payload => {
+      const { title, body } = payload.notification
+      showToast(`${title} — ${body}`, '🔔')
+    })
+    return () => unsubscribe()
+  }, [])
 
   const handleScan = async (qrToken) => {
   if (scanState !== 'idle') return
